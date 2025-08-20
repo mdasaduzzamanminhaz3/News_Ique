@@ -1,24 +1,11 @@
-from rest_framework import serializers
-from users.models import User,UserProfile
+from djoser.serializers import UserCreateSerializer as BaseUserCreateSerialzier,UserSerializer as BaseUserSerializer
 
-class UserSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True)
-    class Meta:
-        model = User
-        fields =['id','email','first_name','last_name','password','role']
 
-    def create(self, validated_data):
-        user =User.objects.create_user(
-            email=validated_data['email'],
-            password=validated_data['password'],
-            first_name = validated_data.get('first_name',""),
-            last_name = validated_data.get('last_name',""),
-            role=validated_data.get('role','SUBSCRIBER')
-        )
-        return user
-    
+class UserCreateSerializer(BaseUserCreateSerialzier):
+    class Meta(BaseUserCreateSerialzier.Meta):
+        fields =['id','first_name','last_name','email','phone_number','password']
 
-class ProfileSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = UserProfile
-        fields = ['id','address','bio','image']
+
+class CurrentUserSerializer(BaseUserSerializer):
+    class Meta(BaseUserSerializer.Meta):
+        fields =['id','first_name','last_name','email','phone_number']
