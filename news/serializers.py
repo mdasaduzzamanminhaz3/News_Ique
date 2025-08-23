@@ -23,16 +23,9 @@ class ReviewSerializer(serializers.ModelSerializer):
     article_headline = serializers.SerializerMethodField()
     class Meta:
         model = Review
-        fields = ['id','article','article_headline','ratings']
+        fields = ['id','article_headline','ratings']
     def get_article_headline(self,obj):
-        view = self.context.get('view')
-        article_id = view.kwargs.get('article_pk') or view.kwargs.get('public_article_pk')
-        if article_id:
-            try:
-                return Article.objects.get(pk=article_id).headline
-            except Article.DoesNotExist:
-                return None
-        return None
+        return getattr(obj.article,'headline',None)
 
 class ArticleDetailSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
