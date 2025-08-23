@@ -30,3 +30,15 @@ class UserProfile(models.Model):
         return self.user.first_name
     
 
+
+class SubscriptionPlan(models.Model):
+    name = models.CharField(max_length=100)
+    price_cents= models.PositiveIntegerField(default=0)
+    features = models.JSONField(default=dict,blank=True)
+class Subscription(models.Model):
+    user    = models.OneToOneField(User,on_delete=models.CASCADE,related_name='subscription')
+    plan = models.ForeignKey(SubscriptionPlan,on_delete=models.SET_NULL,null=True)
+    is_active= models.BooleanField(default=False)
+    started_at = models.DateTimeField(null=True,blank=True)
+    ends_at = models.DateTimeField(null=True,blank=True)
+    
