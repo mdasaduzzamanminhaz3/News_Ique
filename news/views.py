@@ -41,6 +41,9 @@ class CategoryViewSet(viewsets.ModelViewSet):
     """
 
     pagination_class=PageNumberPagination
+    search_fields = ['category__name','category_id']
+    filter_backends=[DjangoFilterBackend,SearchFilter]  
+
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     def get_permissions(self):
