@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 from pathlib import Path
 from decouple import config
 from datetime import timedelta
+import cloudinary
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -25,14 +26,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-d1i=%(x@zif4g8&&-61#1x33h18u@8gz==i6@f&27s77r!^b)+'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [".vercel.app",'127.0.0.1']
 AUTH_USER_MODEL ='users.USER'
 
 # Application definition
 
 INSTALLED_APPS = [
+    "whitenoise.runserver_nostatic",
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -52,6 +54,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -77,7 +80,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'news_ique.wsgi.application'
+WSGI_APPLICATION = 'news_ique.wsgi.app'
 
 
 # Database
@@ -91,16 +94,39 @@ WSGI_APPLICATION = 'news_ique.wsgi.application'
 # }
 
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': config('DB_NAME',default=''),
+#         'USER': config('DB_USER',default =''),
+#         'PASSWORD': config('DB_PASSWORD',default=''),
+#         'HOST': config('DB_HOST',default='localhost'),
+#         'PORT': config('DB_PORT',cast=int)
+#     }
+# }
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': config('DB_NAME',default=''),
-        'USER': config('DB_USER',default =''),
-        'PASSWORD': config('DB_PASSWORD',default=''),
-        'HOST': config('DB_HOST',default='localhost'),
-        'PORT': config('DB_PORT',cast=int)
+        'NAME': config('dbname',default=''),
+        'USER': config('user',default =''),
+        'PASSWORD': config('password',default=''),
+        'HOST': config('host',default='localhost'),
+        'PORT': config('port',cast=int)
     }
 }
+
+
+
+# Configuration  for cloudinary storage  
+cloudinary.config( 
+    cloud_name = config('cloude_name'), 
+    api_key = config('cloudinary_api_key'), 
+    api_secret = config('cloudinary_api_secret'),
+    secure=True
+)
+
+# Media storage setting
+DEFAULT_FILE_STORAGE='cloudinary_storage.storage.MediaCloudinaryStorage'
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
@@ -136,10 +162,13 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-MEDIA_URL='/media/'
-MEDIA_ROOT = BASE_DIR/ 'media'
 STATIC_URL = 'static/'
-STATICFILES_DIRS = [BASE_DIR/'static']
+MEDIA_URL='/media/'
+STATIC_ROOT = BASE_DIR / "staticfiles"
+MEDIA_ROOT = BASE_DIR/ 'media'
+STATIC_STORAGE = "whitenoise.storage.CompressedStaticFilesStorage"
+# STATICFILES_DIRS = [BASE_DIR/'static']
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 

@@ -2,7 +2,7 @@ from django.db import models
 from django.conf import settings
 from django.core.validators import MinValueValidator,MaxValueValidator
 from django.utils import timezone
-from decimal import Decimal
+from cloudinary.models import CloudinaryField
 # Create your models here.
 class Category(models.Model):
     name = models.CharField(max_length=100,unique=True)
@@ -17,7 +17,8 @@ class Category(models.Model):
 class Article(models.Model):
     headline = models.CharField(max_length=300)
     body = models.TextField()
-    image = models.ImageField(upload_to='article/',blank=True,null=True)
+    # image = models.ImageField(upload_to='article/',blank=True,null=True)
+    image =CloudinaryField('article_image' ,default='placeholder', blank=True, null=True)
     category = models.ForeignKey(Category,on_delete=models.CASCADE)
     author = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE)
     published_at = models.DateTimeField(blank=True,null=True)

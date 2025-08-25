@@ -29,6 +29,8 @@ class ReviewSerializer(serializers.ModelSerializer):
 
 class ArticleDetailSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
+    image=serializers.ImageField()
+
     rating = serializers.SerializerMethodField()
     class Meta:
         model = Article
@@ -42,6 +44,8 @@ class ArticleDetailSerializer(serializers.ModelSerializer):
         return None
 
 class ArticleWriteSerializer(serializers.ModelSerializer):
+    image=serializers.ImageField()
+
     class Meta:
         model = Article
         fields = ["headline",'image', "body", "category", "is_published"]
