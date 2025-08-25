@@ -23,7 +23,7 @@ class ReviewSerializer(serializers.ModelSerializer):
     article_headline = serializers.SerializerMethodField()
     class Meta:
         model = Review
-        fields = ['id','article_headline','ratings']
+        fields = ['id','article_headline','comment','ratings']
     def get_article_headline(self,obj):
         return getattr(obj.article,'headline',None)
 
