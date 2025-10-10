@@ -128,8 +128,11 @@ class PublicArticleViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Article.objects.filter(is_published=True)
     serializer_class =ArticleDetailSerializer
 
+
     @action(detail=False,methods=['get'])
     def homepage(self,request):
+        articles = articles = self.get_queryset().order_by("-published_at")[:50]
+        featured = articles.first()
         """
     Retrieve the latest published articles for homepage display.
 
@@ -150,18 +153,28 @@ class PublicArticleViewSet(viewsets.ReadOnlyModelViewSet):
     """
 
         articles = self.get_queryset().order_by("-published_at")[:50]
-        data = [
-            {'headline':article.headline or 'Untitled',
-             'image': article.image.url if article.image else None,
-             'body':(article.body or '')[:50],
-             'ratings': getattr(article, 'ratings', None),
-             'published_at': article.published_at.isoformat() if article.published_at else None,
+        data = {
+            "featured":
+            {
+                "headline": featured.headline,
+                "body": featured.body[:100],
+                "published_at": featured.published_at.isoformat() if featured.published_at else None,
 
-              
-            }
+            },
+            "articles":
+            [
+                {
+                    'headline':article.headline or 'Untitled',
+                    'image': article.image.url if article.image else None,
+                    'body':(article.body or '')[:50],
+                    'ratings': getattr(article, 'ratings', None),
+                    'published_at': article.published_at.isoformat() if article.published_at else None,
+                 }
+            
 
-            for article in articles
-        ]
+                for article in articles
+            ]
+        }
         return Response(data)
 
 
