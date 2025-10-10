@@ -119,64 +119,58 @@ class ArticleViewSet(viewsets.ModelViewSet):
     
 
 
+from rest_framework.response import Response
+from rest_framework.decorators import action
+from rest_framework.pagination import PageNumberPagination
+
 class PublicArticleViewSet(viewsets.ReadOnlyModelViewSet):
-    search_fields = ['headline', 'body','category__name']
-    pagination_class=PageNumberPagination
-
-    filter_backends=[DjangoFilterBackend,SearchFilter]  
-    filterset_class = ArticleFilter  
+    search_fields = ['headline', 'body', 'category__name']
+    pagination_class = PageNumberPagination
+    filter_backends = [DjangoFilterBackend, SearchFilter]
+    filterset_class = ArticleFilter
     queryset = Article.objects.filter(is_published=True)
-    serializer_class =ArticleDetailSerializer
+    serializer_class = ArticleDetailSerializer
 
-
-    @action(detail=False,methods=['get'])
-    def homepage(self,request):
-        articles = articles = self.get_queryset().order_by("-published_at")[:50]
-        featured = articles.first()
+    @action(detail=False, methods=['get'])
+    def homepage(self, request):
         """
-    Retrieve the latest published articles for homepage display.
+        Retrieve the latest published articles for homepage display.
 
-    This endpoint returns a simplified list of up to 50 recently published articles,
-    ordered by `published_at` in descending order. Each article includes:
-    - `headline`: Title of the article
-    - `body`: First 50 characters of the article body
-    - `ratings`: Average rating or score (if available)
+        This endpoint returns paginated articles and a featured article.
+        """
+        # Full queryset for featured
+        full_queryset = self.get_queryset().order_by("-published_at")
+        featured = full_queryset.first()
 
-    This is optimized for homepage previews, not full article details.
+        # Paginated queryset for articles
+        paginated_queryset = self.paginate_queryset(full_queryset)
 
-    Responses:
-    - 200 OK: Returns a list of article previews
-    - 500 Internal Server Error: Unexpected failure
-
-    Example:
-    GET /api/public-articles/homepage/
-    """
-
-        articles = self.get_queryset().order_by("-published_at")[:50]
-        data = {
-            "featured":
+        # Serialize paginated articles manually
+        serialized_articles = [
             {
+                'headline': article.headline or 'Untitled',
+                'image': article.image.url if article.image else None,
+                'body': (article.body or '')[:50],
+                'ratings': getattr(article, 'ratings', None),
+                'published_at': article.published_at.isoformat() if article.published_at else None,
+            }
+            for article in paginated_queryset
+        ]
+
+        # Featured article block
+        featured_data = None
+        if featured:
+            featured_data = {
                 "headline": featured.headline,
                 "body": featured.body[:100],
                 "published_at": featured.published_at.isoformat() if featured.published_at else None,
+            }
 
-            },
-            "articles":
-            [
-                {
-                    'headline':article.headline or 'Untitled',
-                    'image': article.image.url if article.image else None,
-                    'body':(article.body or '')[:50],
-                    'ratings': getattr(article, 'ratings', None),
-                    'published_at': article.published_at.isoformat() if article.published_at else None,
-                 }
-            
-
-                for article in articles
-            ]
-        }
-        return Response(data)
-
+        # Return paginated response with featured + articles
+        return self.get_paginated_response({
+            "featured": featured_data,
+            "articles": serialized_articles
+        })
 
 class ReviewViewSet(viewsets.ModelViewSet):
     
