@@ -50,7 +50,7 @@ class CategoryViewSet(viewsets.ModelViewSet):
         if self.request.method == "GET":
             return [AllowAny()]
         return [IsAdminUser()]
-       
+    
 class ArticleViewSet(viewsets.ModelViewSet):
     """
     API endpoint for managing news articles.
