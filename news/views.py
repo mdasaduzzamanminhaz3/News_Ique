@@ -151,9 +151,9 @@ class PublicArticleViewSet(viewsets.ReadOnlyModelViewSet):
 
         articles = self.get_queryset().order_by("-published_at")[:50]
         data = [
-            {'headline':article.headline,
-             'body':article.body[:50],
-             'ratings':article.ratings,
+            {'headline':article.headline or 'Untitled',
+             'body':(article.body or '')[:50],
+             'ratings': getattr(article, 'ratings', None),
               
             }
 
