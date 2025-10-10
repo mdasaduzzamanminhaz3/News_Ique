@@ -152,9 +152,11 @@ class PublicArticleViewSet(viewsets.ReadOnlyModelViewSet):
         articles = self.get_queryset().order_by("-published_at")[:50]
         data = [
             {'headline':article.headline or 'Untitled',
+             'image': article.image.url if article.image else None,
              'body':(article.body or '')[:50],
              'ratings': getattr(article, 'ratings', None),
              'published_at': article.published_at.isoformat() if article.published_at else None,
+
               
             }
 
