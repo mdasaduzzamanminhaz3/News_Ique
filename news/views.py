@@ -119,9 +119,6 @@ class ArticleViewSet(viewsets.ModelViewSet):
     
 
 
-from rest_framework.response import Response
-from rest_framework.decorators import action
-from rest_framework.pagination import PageNumberPagination
 
 class PublicArticleViewSet(viewsets.ReadOnlyModelViewSet):
     search_fields = ['headline', 'body', 'category__name']
