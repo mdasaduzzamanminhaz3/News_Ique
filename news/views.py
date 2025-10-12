@@ -131,42 +131,23 @@ class PublicArticleViewSet(viewsets.ReadOnlyModelViewSet):
     @action(detail=False, methods=['get'])
     def homepage(self, request):
         """
-        Retrieve the latest published articles for homepage display.
-
-        This endpoint returns paginated articles and a featured article.
+        Homepage endpoint: Featured article + paginated articles
         """
-        # Full queryset for featured
-        full_queryset = self.get_queryset().order_by("-published_at")
-        featured = full_queryset.first()
+        qs = self.get_queryset().order_by("-published_at")
 
-        # Paginated queryset for articles
-        paginated_queryset = self.paginate_queryset(full_queryset)
-
-        # Serialize paginated articles manually
-        serialized_articles = [
-            {
-                'headline': article.headline or 'Untitled',
-                'image': article.image.url if article.image else None,
-                'body': (article.body or '')[:50],
-                'ratings': getattr(article, 'ratings', None),
-                'published_at': article.published_at.isoformat() if article.published_at else None,
-            }
-            for article in paginated_queryset
-        ]
-
-        # Featured article block
+        # Featured article
+        featured_article = qs.first()
         featured_data = None
-        if featured:
-            featured_data = {
-                "headline": featured.headline,
-                "body": featured.body[:100],
-                "published_at": featured.published_at.isoformat() if featured.published_at else None,
-            }
+        if featured_article:
+            featured_data = ArticleDetailSerializer(featured_article).data
 
-        # Return paginated response with featured + articles
+        # Paginate articles
+        page = self.paginate_queryset(qs)
+        articles_data = ArticleDetailSerializer(page, many=True).data if page else []
+
         return self.get_paginated_response({
             "featured": featured_data,
-            "articles": serialized_articles
+            "articles": articles_data
         })
 
 class ReviewViewSet(viewsets.ModelViewSet):
