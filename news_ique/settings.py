@@ -216,13 +216,15 @@ SWAGGER_SETTINGS = {
 
 
 DJOSER = {
+    'EMAIL_FRONTEND_PROTOCOL':config('FRONTEND_PROTOCOL'),
+    'EMAIL_FRONTEND_DOMAIN':config('FRONTEND_DOMAIN'),
+    'EMAIL_FRONTEND_SITE_NAME':'NewsIque',
     'PASSWORD_RESET_CONFIRM_URL': 'password/reset/confirm/{uid}/{token}',
     'ACTIVATION_URL': 'activate/{uid}/{token}',
-    'SEND_ACTIVATION_EMAIL': False,
+    'SEND_ACTIVATION_EMAIL': True,
 
     'SERIALIZERS': {
         'user_create':'users.serializers.UserCreateSerializer',
-        "user": "users.serializers.CurrentUserSerializer",
         'current_user':'users.serializers.CurrentUserSerializer'
     },
 }
