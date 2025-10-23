@@ -6,6 +6,7 @@ from .managers import CustomUserManager
 class User(AbstractUser):
     username=None
     ROLE_CHOICES = [
+        ('ADMIN', 'Admin'),
         ('EDITOR','Editor'),
         ('SUBSCRIBER','Subscriber')
     ]

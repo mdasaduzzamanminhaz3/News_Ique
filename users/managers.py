@@ -5,7 +5,7 @@ class CustomUserManager(BaseUserManager):
         if not email:
             raise ValueError("Email must be set")
         email = self.normalize_email(email)
-        # extra_fields.setdefault('role', 'SUBSCRIBER')  # Default role
+        extra_fields.setdefault('role', 'SUBSCRIBER')  # Default role
         user = self.model(email=email, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
@@ -14,6 +14,7 @@ class CustomUserManager(BaseUserManager):
     def create_superuser(self, email, password=None, **extra_fields):
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
+        extra_fields['role'] ='ADMIN'
         # extra_fields.setdefault('role', 'EDITOR')  # Optional: superuser as editor
 
         if not extra_fields.get('is_staff'):

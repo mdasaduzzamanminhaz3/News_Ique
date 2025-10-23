@@ -8,7 +8,8 @@ class UserCreateSerializer(BaseUserCreateSerialzier):
 
 class CurrentUserSerializer(BaseUserSerializer):
     class Meta(BaseUserSerializer.Meta):
-        fields =['id','first_name','last_name','email','phone_number']
+        fields =['id','first_name','last_name','email','phone_number','role']
+        read_only_fields=['role']
 
 
 class ProfileSerializer(serializers.ModelSerializer):
