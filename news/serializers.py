@@ -48,5 +48,6 @@ class ArticleWriteSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Article
-        fields = ["headline",'image', "body", "category", "is_published"]
+        fields = ["id","headline",'image', "body", "category", "is_published"]
+        read_only_fields =['id']
 
