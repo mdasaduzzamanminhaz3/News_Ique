@@ -12,11 +12,15 @@ class ArticleSerializer(serializers.ModelSerializer):
         queryset = Category.objects.all(),
         view_name ='category-detail'
     )
-    
+    image = serializers.SerializerMethodField() 
     class Meta:
         model = Article
         fields =['id','category','headline','image','body','published_at','author']
-
+        
+    def get_image(self, obj):
+        if obj.image and obj.image.url != "placeholder":
+            return obj.image.url
+        return None
 
     
 class ReviewSerializer(serializers.ModelSerializer):
