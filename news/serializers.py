@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import Category,Article,Review
-
+from django.utils import timezone
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
@@ -48,6 +48,16 @@ class ArticleWriteSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Article
-        fields = ["id","headline",'image', "body", "category", "is_published"]
-        read_only_fields =['id']
+        fields = ["id","headline",'image', "body", "category", "is_published","published_at"]
+        read_only_fields =['id',"published_at"]
+        
+    def create(self, validated_data):
+        if validated_data.get("is_published") and not validated_data.get("published_at"):
+            validated_data['published_at'] = timezone.now()
+        return super().create(validated_data)
+    
+    def update(self,instance,validated_data):
+        if validated_data.get("is_published") and not instance.published_at:
+            instance.published_at = timezone.now()
+        return super().update(instance,validated_data)
 
