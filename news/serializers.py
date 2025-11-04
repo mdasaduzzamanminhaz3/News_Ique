@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from .models import Category,Article,Review
 from django.utils import timezone
+from users.serializers import CurrentUserSerializer
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
@@ -25,9 +26,10 @@ class ArticleSerializer(serializers.ModelSerializer):
     
 class ReviewSerializer(serializers.ModelSerializer):
     article_headline = serializers.SerializerMethodField()
+    user = CurrentUserSerializer(read_only=True)
     class Meta:
         model = Review
-        fields = ['id','article_headline','comment','ratings']
+        fields = ['id','article_headline','comment','ratings','user']
     def get_article_headline(self,obj):
         return getattr(obj.article,'headline',None)
 
