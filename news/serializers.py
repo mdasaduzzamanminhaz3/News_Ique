@@ -29,7 +29,7 @@ class ReviewSerializer(serializers.ModelSerializer):
     user = CurrentUserSerializer(read_only=True)
     class Meta:
         model = Review
-        fields = ['id','article_headline','comment','ratings','user']
+        fields = ['id','article_headline','comment','ratings','created_at','user']
     def get_article_headline(self,obj):
         return getattr(obj.article,'headline',None)
 
