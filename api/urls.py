@@ -1,7 +1,7 @@
 from django.urls import path,include
 from rest_framework.routers import DefaultRouter
 from rest_framework_nested import routers
-
+from users.views import UserListView
 from news.views import *
 
 router = DefaultRouter()
@@ -9,6 +9,7 @@ router.register('categories',CategoryViewSet,basename='category')
 router.register('articles',ArticleViewSet,basename='article')
 router.register('reviews',ReviewViewSet,basename='review')
 router.register('public_articles',PublicArticleViewSet,basename='public_articles')
+router.register('users_list',UserListView,basename='user')
 
 articles_router = routers.NestedDefaultRouter(router,'articles',lookup='article')
 articles_router.register('reviews',ReviewViewSet,basename='article-review')
