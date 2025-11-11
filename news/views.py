@@ -13,6 +13,7 @@ from news.filters import ArticleFilter
 from rest_framework.filters import SearchFilter
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.pagination import PageNumberPagination
+from news.permissions import IsAdminOrEditor
 # Create your views here.
 class CategoryViewSet(viewsets.ModelViewSet):
     """
@@ -89,7 +90,11 @@ class ArticleViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.request.method == "GET":
             return [AllowAny()]
-        return [IsAdminUser()]
+        elif self.request.method in ["POST","PUT","PATCH"]:
+            return [IsAdminOrEditor()]
+        elif self.request.method == "DELETE":
+            return [IsAdminUser()]
+        return [IsAuthenticatedOrReadOnly()]
         
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
