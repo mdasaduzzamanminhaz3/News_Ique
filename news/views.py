@@ -3,17 +3,22 @@ from rest_framework import viewsets
 from rest_framework.decorators import action
 from news.models import Category,Article,Review
 from news.serializers import CategorySerializer,ArticleSerializer,ArticleWriteSerializer,ArticleDetailSerializer,ReviewSerializer
-from rest_framework import generics
-from rest_framework.permissions import IsAuthenticatedOrReadOnly,IsAdminUser,AllowAny
+from rest_framework.permissions import IsAuthenticatedOrReadOnly,IsAdminUser,AllowAny,IsAuthenticated
 from django.core.mail import send_mail
-from django.conf import settings
+from django.conf import settings as main_settings
 from drf_yasg.utils import swagger_auto_schema
-from django_filters.rest_framework import FilterSet
 from news.filters import ArticleFilter
 from rest_framework.filters import SearchFilter
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.pagination import PageNumberPagination
 from news.permissions import IsAdminOrEditor
+from sslcommerz_lib import SSLCOMMERZ 
+from rest_framework import status
+from rest_framework.decorators import api_view,permission_classes
+from users.models import User,SubscriptionPlan,Subscription
+from users.serializers import SubscriptionPlanSerializer
+from django.utils import timezone
+from django.shortcuts import redirect,HttpResponseRedirect
 # Create your views here.
 class CategoryViewSet(viewsets.ModelViewSet):
     """
@@ -133,6 +138,30 @@ class PublicArticleViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Article.objects.filter(is_published=True)
     serializer_class = ArticleDetailSerializer
 
+    def retrieve(self, request, *args, **kwargs):
+        article = self.get_object()
+        user = request.user
+        is_article_premium = article.category.is_premium
+        if is_article_premium:
+            is_subscribed = False
+            if user.is_authenticated:
+                try:
+                    user_subscription = user.subscription
+                    is_subscribed = user_subscription.is_active
+                except:
+                    is_subscribed= False
+            if not is_subscribed:
+                paywall_data = {
+                    "detail":"This article is premium. An active subscription is required to read the full article.",
+                    "article_headline":article.headline,
+                    "is_premium":True,
+                    "teaser":article.body[:300] + "....",
+                    "subscribe_url":"/api/v1/payment/initiate"
+                }
+                return Response(paywall_data,status=status.HTTP_403_FORBIDDEN)
+        serializer= self.get_serializer(article)
+        return Response(serializer.data)
+    
     @action(detail=False, methods=['get'])
     def homepage(self, request):
         """
@@ -202,7 +231,103 @@ class ReviewViewSet(viewsets.ModelViewSet):
         send_mail(
             subject = 'Thanks for your review',
             message=f"Hi {self.request.user.first_name},\n\n Thanks for your reviewing: {headline}.\nYour feedback means a lot!",
-            from_email=settings.EMAIL_HOST_USER,
+            from_email=main_settings.EMAIL_HOST_USER,
             recipient_list=[self.request.user.email],
             fail_silently=True
         )
+
+class SubscriptionPlanViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    API endpoint to list and retrieve Subscription Plans.
+    Plans are public and read-only.
+    """
+    serializer_class=SubscriptionPlanSerializer
+    queryset = SubscriptionPlan.objects.all().order_by('price_cents')
+    permission_classes = [AllowAny]
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def initiate_payment(request):
+    user = request.user
+    user_id = user.id
+    
+    plan_id = request.data.get('plan_id')
+    if not plan_id:
+        return Response({"error":"Subscription plan ID is required"},status=status.HTTP_400_BAD_REQUEST)
+    try:
+        plan = SubscriptionPlan.objects.get(id=plan_id)
+        amount = plan.price_cents
+    except:
+        return Response({"error":"Invalid subscription plan"}, status=status.HTTP_404_NOT_FOUND)
+    tran_id = f"txn:{user.id}_{plan.id}_{int(timezone.now().timestamp())}"
+    settings = { 'store_id': 'phima68e15b8a44795', 'store_pass': 'phima68e15b8a44795@ssl', 'issandbox': True }
+    sslcz = SSLCOMMERZ(settings)
+    post_body = {}
+    post_body['total_amount'] = amount
+    post_body['currency'] = "BDT"
+    post_body['tran_id'] = tran_id
+    post_body['success_url'] = f"{main_settings.BACKEND_URL}/api/v1/payment/success"
+    post_body['fail_url'] = f"{main_settings.BACKEND_URL}/api/v1/payment/fail"
+    post_body['cancel_url'] = f"{main_settings.BACKEND_URL}/api/v1/payment/cancel"
+    post_body['emi_option'] = 0
+    post_body['cus_name'] = f"{user.first_name} {user.last_name}"
+    post_body['cus_email'] = user.email
+    post_body['cus_phone'] = "8978934"
+    post_body['cus_add1'] = "None"
+    post_body['cus_city'] = "Dhaka" 
+    post_body['cus_country'] = "Bangladesh"
+    post_body['shipping_method'] = "NO"
+    post_body['multi_card_name'] = ""
+    post_body['num_of_item'] = 1
+    post_body['product_name'] = "News Subscription"
+    post_body['product_category'] = "General"
+    post_body['product_profile'] = "general"
+
+
+    response = sslcz.createSession(post_body) # API response
+    if response.get('status') == 'SUCCESS':
+        return Response({'payment_url':response['GatewayPageURL']})
+    return Response({"error":"payment initation failed"},status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['POST'])
+def payment_success(request):
+    tran_id = request.data.get('tran_id')
+    if not tran_id:
+        return Response({"error": "Transaction ID not provided"}, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Extract user_id, plan_id, timestamp
+    txn_parts = tran_id.replace('txn:', '').split('_')
+    if len(txn_parts) != 3:
+        return Response({"error": "Invalid transaction ID"}, status=status.HTTP_400_BAD_REQUEST)
+    
+    user_id, plan_id, timestamp = txn_parts
+    
+    # Get the actual user object
+    try:
+        user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+    
+    # Get the plan
+    plan = SubscriptionPlan.objects.get(id=plan_id)
+    
+    # Create subscription
+    subscription, created = Subscription.objects.get_or_create(
+        user=user,
+        plan=plan,
+        defaults={
+            'started_at': timezone.now(),
+            'ends_at': timezone.now() + timezone.timedelta(days=30),
+            'is_active': True
+        }
+    )
+    
+    # Redirect to frontend success page
+    return HttpResponseRedirect(f"{main_settings.FRONTEND_URL}/payment/success")
+@api_view(['POST'])
+def payment_cancel(request):
+    return HttpResponseRedirect(f"{main_settings.FRONTEND_URL}/subscription/plan")
+@api_view(['POST'])
+def payment_failed(request):
+    return HttpResponseRedirect(f"{main_settings.FRONTEND_URL}/subscription/plan")

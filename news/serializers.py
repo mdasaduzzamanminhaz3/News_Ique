@@ -5,7 +5,7 @@ from users.serializers import CurrentUserSerializer
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
-        fields =['id','name','description']
+        fields =['id','name','description','is_premium']
 
 class ArticleSerializer(serializers.ModelSerializer):
     # category = CategorySerializer(read_only=True)

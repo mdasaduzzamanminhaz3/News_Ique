@@ -26,7 +26,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-d1i=%(x@zif4g8&&-61#1x33h18u@8gz==i6@f&27s77r!^b)+'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = [".vercel.app",'127.0.0.1']
 AUTH_USER_MODEL ='users.User'
@@ -237,3 +237,6 @@ EMAIL_USE_TLS = config('EMAIL_USE_TLS',cast=bool)
 EMAIL_PORT = config('EMAIL_PORT')
 EMAIL_HOST_USER = config('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
+
+BACKEND_URL = config('BACKEND_URL')
+FRONTEND_URL = config('FRONTEND_URL')

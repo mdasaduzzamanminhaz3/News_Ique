@@ -40,6 +40,7 @@ class Subscription(models.Model):
     user    = models.OneToOneField(User,on_delete=models.CASCADE,related_name='subscription')
     plan = models.ForeignKey(SubscriptionPlan,on_delete=models.SET_NULL,null=True)
     is_active= models.BooleanField(default=False)
+    tran_id = models.CharField(max_length=250,blank=True,null=True)
     started_at = models.DateTimeField(null=True,blank=True)
     ends_at = models.DateTimeField(null=True,blank=True)
     
