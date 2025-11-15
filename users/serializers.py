@@ -13,10 +13,6 @@ class ProfileSerializer(serializers.ModelSerializer):
         fields=['user','bio','address','image']
 
 
-class UserListSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields =['id','first_name','last_name','email','phone_number','role','is_active']
 
 
 class SubscriptionPlanSerializer(serializers.ModelSerializer):
@@ -42,3 +38,14 @@ class CurrentUserSerializer(BaseUserSerializer):
     class Meta(BaseUserSerializer.Meta):
         fields =['id','first_name','last_name','email','phone_number','role','subscription']
         read_only_fields=['role','subscription']
+
+class UserListSerializer(serializers.ModelSerializer):
+    is_premium = serializers.SerializerMethodField()
+    class Meta:
+        model = User
+        fields =['id','first_name','last_name','email','phone_number','role','is_active','is_premium']
+    def get_is_premium(self,obj):
+        subscription = getattr(obj,'subscription',None)
+        if subscription and subscription.is_active:
+            return True
+        return False
