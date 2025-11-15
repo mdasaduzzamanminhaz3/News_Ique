@@ -296,34 +296,39 @@ def payment_success(request):
     if not tran_id:
         return Response({"error": "Transaction ID not provided"}, status=status.HTTP_400_BAD_REQUEST)
     
-    # Extract user_id, plan_id, timestamp
     txn_parts = tran_id.replace('txn:', '').split('_')
     if len(txn_parts) != 3:
         return Response({"error": "Invalid transaction ID"}, status=status.HTTP_400_BAD_REQUEST)
     
     user_id, plan_id, timestamp = txn_parts
     
-    # Get the actual user object
     try:
         user = User.objects.get(id=user_id)
     except User.DoesNotExist:
         return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
     
-    # Get the plan
     plan = SubscriptionPlan.objects.get(id=plan_id)
     
-    # Create subscription
     subscription, created = Subscription.objects.get_or_create(
         user=user,
-        plan=plan,
         defaults={
-            'started_at': timezone.now(),
-            'ends_at': timezone.now() + timezone.timedelta(days=30),
-            'is_active': True
+            "plan": plan,
+            "tran_id": tran_id,
+            "started_at": timezone.now(),
+            "ends_at": timezone.now() + timezone.timedelta(days=30),
+            "is_active": True
         }
     )
-    
-    # Redirect to frontend success page
+
+    if not created:
+        # Update existing subscription
+        subscription.plan = plan
+        subscription.tran_id = tran_id
+        subscription.started_at = timezone.now()
+        subscription.ends_at = timezone.now() + timezone.timedelta(days=30)
+        subscription.is_active = True
+        subscription.save()
+
     return HttpResponseRedirect(f"{main_settings.FRONTEND_URL}/payment/success")
 @api_view(['POST'])
 def payment_cancel(request):

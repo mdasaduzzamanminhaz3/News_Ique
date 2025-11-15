@@ -1,15 +1,10 @@
 from djoser.serializers import UserCreateSerializer as BaseUserCreateSerialzier,UserSerializer as BaseUserSerializer
 from rest_framework import serializers
-from users.models import UserProfile,User,SubscriptionPlan
+from users.models import UserProfile,User,SubscriptionPlan,Subscription
 class UserCreateSerializer(BaseUserCreateSerialzier):
     class Meta(BaseUserCreateSerialzier.Meta):
         fields =['id','first_name','last_name','email','phone_number','password']
 
-
-class CurrentUserSerializer(BaseUserSerializer):
-    class Meta(BaseUserSerializer.Meta):
-        fields =['id','first_name','last_name','email','phone_number','role']
-        read_only_fields=['role']
 
 
 class ProfileSerializer(serializers.ModelSerializer):
@@ -31,4 +26,19 @@ class SubscriptionPlanSerializer(serializers.ModelSerializer):
         fields =['id','name','price','features','price_cents']
     def get_price(self,obj):
         return obj.price_cents / 130.0 if obj.price_cents else 0.0
-    
+
+
+class SubscriptionSeriaziler(serializers.ModelSerializer):
+    plan = SubscriptionPlanSerializer()
+    class Meta:
+        model = Subscription
+        fields =['plan', 'started_at', 'ends_at', 'is_active', 'tran_id']
+
+
+
+
+class CurrentUserSerializer(BaseUserSerializer):
+    subscription = SubscriptionSeriaziler(read_only=True)
+    class Meta(BaseUserSerializer.Meta):
+        fields =['id','first_name','last_name','email','phone_number','role','subscription']
+        read_only_fields=['role','subscription']
