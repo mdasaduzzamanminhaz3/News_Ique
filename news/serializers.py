@@ -35,7 +35,8 @@ class ReviewSerializer(serializers.ModelSerializer):
 
 class ArticleDetailSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
-    image=serializers.ImageField()
+    # image=serializers.ImageField()
+    image = serializers.SerializerMethodField()
 
     rating = serializers.SerializerMethodField()
     class Meta:
@@ -44,13 +45,18 @@ class ArticleDetailSerializer(serializers.ModelSerializer):
 
     def get_rating(self,obj):
         reviews = obj.reviews.all()
-
         if reviews.exists():
             return round(sum([r.ratings for r in reviews]))
         return None
+    
+    def get_image(self,obj):
+        if obj.image and obj.image.url != "placeholder":
+            return obj.image.url
+        return None
 
 class ArticleWriteSerializer(serializers.ModelSerializer):
-    image=serializers.ImageField()
+    # image=serializers.ImageField()
+    image = serializers.ImageField(required=False,allow_null=True)
 
     class Meta:
         model = Article
@@ -62,8 +68,21 @@ class ArticleWriteSerializer(serializers.ModelSerializer):
             validated_data['published_at'] = timezone.now()
         return super().create(validated_data)
     
-    def update(self,instance,validated_data):
-        if validated_data.get("is_published") and not instance.published_at:
-            instance.published_at = timezone.now()
-        return super().update(instance,validated_data)
+    def update(self, instance, validated_data):
+        if 'image' in validated_data:
+            instance.image = validated_data.get('image', instance.image)
+        
+        is_published = validated_data.pop('is_published', None)
+        if is_published is True:
+            if not instance.published_at:
+                instance.published_at = timezone.now()
+        elif is_published is False:
+            instance.published_at = None  
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        
+        instance.save()
+        return instance
+
 
