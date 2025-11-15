@@ -26,7 +26,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-d1i=%(x@zif4g8&&-61#1x33h18u@8gz==i6@f&27s77r!^b)+'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = [".vercel.app",'127.0.0.1']
 AUTH_USER_MODEL ='users.User'
@@ -54,6 +54,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     "whitenoise.middleware.WhiteNoiseMiddleware",
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -87,6 +88,7 @@ WSGI_APPLICATION = 'news_ique.wsgi.app'
 
 CORS_ALLOWED_ORIGINS = [
    'http://localhost:5173',
+   'https://news-ique-client.vercel.app'
 ]
 
 # Database
